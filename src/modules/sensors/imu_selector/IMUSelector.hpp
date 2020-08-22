@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,10 +33,12 @@
 
 #pragma once
 
-#include <lib/sensor_calibration/Accelerometer.hpp>
+#include "data_validator/DataValidatorGroup.hpp"
+
 #include <lib/mathlib/math/Limits.hpp>
 #include <lib/matrix/matrix/math.hpp>
-#include <lib/mathlib/math/filter/LowPassFilter2pVector3f.hpp>
+#include <lib/perf/perf_counter.h>
+#include <lib/systemlib/mavlink_log.h>
 #include <px4_platform_common/log.h>
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_config.h>
@@ -44,21 +46,19 @@
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
-#include <uORB/topics/estimator_sensor_bias.h>
 #include <uORB/topics/parameter_update.h>
-#include <uORB/topics/sensor_accel.h>
-#include <uORB/topics/sensor_selection.h>
-#include <uORB/topics/vehicle_acceleration.h>
+#include <uORB/topics/sensor_baro.h>
+#include <uORB/topics/sensor_correction.h>
+#include <uORB/topics/vehicle_air_data.h>
 
 namespace sensors
 {
-
-class VehicleAcceleration : public ModuleParams, public px4::ScheduledWorkItem
+class IMUSelector : public ModuleParams, public px4::ScheduledWorkItem
 {
 public:
 
-	VehicleAcceleration();
-	~VehicleAcceleration() override;
+	IMUSelector();
+	~IMUSelector() override;
 
 	bool Start();
 	void Stop();
@@ -68,57 +68,41 @@ public:
 private:
 	void Run() override;
 
-	void CheckFilters();
-	void ParametersUpdate(bool force = false);
-	void SensorBiasUpdate(bool force = false);
-	bool SensorSelectionUpdate(bool force = false);
+	void ParametersUpdate();
+	void SensorCorrectionsUpdate(bool force = false);
 
 	static constexpr int MAX_SENSOR_COUNT = 3;
 
-	uORB::Publication<vehicle_acceleration_s> _vehicle_acceleration_pub{ORB_ID(vehicle_acceleration)};
-
-	uORB::Subscription _estimator_sensor_bias_sub[ORB_MULTI_MAX_INSTANCES] {
-		{ORB_ID(estimator_sensor_bias), 0},
-		{ORB_ID(estimator_sensor_bias), 1},
-		{ORB_ID(estimator_sensor_bias), 2},
-		{ORB_ID(estimator_sensor_bias), 3},
-	};
+	uORB::Publication<vehicle_air_data_s> _vehicle_air_data_pub{ORB_ID(vehicle_air_data)};
 
 	uORB::Subscription _params_sub{ORB_ID(parameter_update)};
+	uORB::Subscription _sensor_correction_sub{ORB_ID(sensor_correction)};
 
-	uORB::SubscriptionCallbackWorkItem _sensor_selection_sub{this, ORB_ID(sensor_selection)};
 	uORB::SubscriptionCallbackWorkItem _sensor_sub[MAX_SENSOR_COUNT] {
-		{this, ORB_ID(sensor_accel), 0},
-		{this, ORB_ID(sensor_accel), 1},
-		{this, ORB_ID(sensor_accel), 2}
+		{this, ORB_ID(sensor_baro), 0},
+		{this, ORB_ID(sensor_baro), 1},
+		{this, ORB_ID(sensor_baro), 2}
 	};
 
-	calibration::Accelerometer _calibration{};
+	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")};
 
-	matrix::Vector3f _bias{0.f, 0.f, 0.f};
+	hrt_abstime _last_error_message{0};
+	orb_advert_t _mavlink_log_pub{nullptr};
 
-	matrix::Vector3f _acceleration_prev{0.f, 0.f, 0.f};
+	DataValidatorGroup _voter{1};
+	unsigned _last_failover_count{0};
 
-	static constexpr const float kInitialRateHz{1000.0f}; /**< sensor update rate used for initialization */
-	float _update_rate_hz{kInitialRateHz}; /**< current rate-controller loop update rate in [Hz] */
+	sensor_baro_s _last_data[MAX_SENSOR_COUNT] {};
+	bool _advertised[MAX_SENSOR_COUNT] {};
 
-	uint8_t _required_sample_updates{0}; /**< number or sensor publications required for configured rate */
+	float _thermal_offset[MAX_SENSOR_COUNT] {0.f, 0.f, 0.f};
 
-	math::LowPassFilter2pVector3f _lp_filter{kInitialRateHz, 30.0f};
+	uint8_t _priority[MAX_SENSOR_COUNT] {};
 
-	float _filter_sample_rate{kInitialRateHz};
-
-	uint32_t _selected_sensor_device_id{0};
-	uint8_t _selected_sensor_sub_index{0};
-
-	hrt_abstime _timestamp_sample_last{0};
-	float _interval_sum{0.f};
-	float _interval_count{0.f};
+	int8_t _selected_sensor_sub_index{-1};
 
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::IMU_ACCEL_CUTOFF>) _param_imu_accel_cutoff,
-		(ParamInt<px4::params::IMU_INTEG_RATE>) _param_imu_integ_rate
+		(ParamFloat<px4::params::SENS_BARO_QNH>) _param_sens_baro_qnh
 	)
 };
-
-} // namespace sensors
+}; // namespace sensors
