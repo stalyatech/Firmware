@@ -87,8 +87,10 @@ int mtd_main(int argc, char *argv[])
 #  endif
 
 
-#ifdef CONFIG_MTD_RAMTRON
+#if defined(CONFIG_MTD_RAMTRON)
 static int	ramtron_attach(void);
+#elif defined(CONFIG_MTD_W25)
+static int	spinor_attach(void);
 #else
 
 #ifndef PX4_I2C_BUS_MTD
@@ -197,7 +199,7 @@ struct mtd_dev_s *ramtron_initialize(FAR struct spi_dev_s *dev);
 struct mtd_dev_s *mtd_partition(FAR struct mtd_dev_s *mtd,
 				off_t firstblock, off_t nblocks);
 
-#ifdef CONFIG_MTD_RAMTRON
+#if defined(CONFIG_MTD_RAMTRON)
 static int
 ramtron_attach(void)
 {
@@ -219,6 +221,57 @@ ramtron_attach(void)
 
 	for (int i = 0; i < 5; i++) {
 		mtd_dev = ramtron_initialize(spi);
+
+		if (mtd_dev) {
+			/* abort on first valid result */
+			if (i > 0) {
+				PX4_WARN("mtd needed %d attempts to attach", i + 1);
+			}
+
+			break;
+		}
+	}
+
+	/* if last attempt is still unsuccessful, abort */
+	if (mtd_dev == nullptr) {
+		PX4_ERR("failed to initialize mtd driver");
+		return 1;
+	}
+
+	int ret = mtd_dev->ioctl(mtd_dev, MTDIOC_SETSPEED, (unsigned long)10 * 1000 * 1000);
+
+	if (ret != OK) {
+		// FIXME: From the previous warning call, it looked like this should have been fatal error instead. Tried
+		// that but setting the bus speed does fail all the time. Which was then exiting and the board would
+		// not run correctly. So changed to PX4_WARN.
+		PX4_WARN("failed to set bus speed");
+	}
+
+	attached = true;
+	return 0;
+}
+#elif defined(CONFIG_MTD_W25)
+static int
+spinor_attach(void)
+{
+	/* initialize the right spi */
+	struct spi_dev_s *spi = px4_spibus_initialize(px4_find_spi_bus(SPIDEV_FLASH(0)));
+
+	if (spi == nullptr) {
+		PX4_ERR("failed to locate spi bus");
+		return 1;
+	}
+
+	/* this resets the spi bus, set correct bus speed again */
+	SPI_SETFREQUENCY(spi, 10 * 1000 * 1000);
+	SPI_SETBITS(spi, 8);
+	SPI_SETMODE(spi, SPIDEV_MODE3);
+	SPI_SELECT(spi, SPIDEV_FLASH(0), false);
+
+	/* start the RAMTRON driver, attempt 5 times */
+
+	for (int i = 0; i < 5; i++) {
+		mtd_dev = w25_initialize(spi);
 
 		if (mtd_dev) {
 			/* abort on first valid result */
@@ -297,8 +350,10 @@ mtd_start(const char *partition_names[], unsigned n_partitions)
 	}
 
 	if (!attached) {
-#ifdef CONFIG_MTD_RAMTRON
+#if defined(CONFIG_MTD_RAMTRON)
 		ret = ramtron_attach();
+#elif defined(CONFIG_MTD_W25)
+		ret = spinor_attach();
 #else
 		ret = at24xxx_attach();
 #endif

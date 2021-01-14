@@ -116,3 +116,8 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: stalya_trap_default
+    stalya_trap_debug:
+      short: stalya_trap_debug
+      buildType: Debug
+      settings:
+        CONFIG: stalya_trap_debug

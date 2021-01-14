@@ -45,6 +45,9 @@
 
 #include "usb251x.h"
 
+#pragma GCC push_options
+#pragma GCC optimize ("-O0")
+
 /*
 *********************************************************************************************************
 *                                            LOCAL DEFINITIONS
@@ -114,6 +117,7 @@ USB251x::USB251x(I2CSPIBusOption bus_option, const int bus, SMBus *interface) :
 	// Configure reset pin
 	px4_arch_configgpio(GPIO_USBHUB_RESET);
 
+	// initialize low level interface
 	_interface->init();
 }
 
@@ -160,29 +164,29 @@ bool USB251x::Configure()
 	char serial[32]={0};
 
 	//
-	// Power on the USB hub while reset asserted
+	// Power on the USB hub while Reset asserted
 	//
-	reset(true);
-	poweron();
-	usleep(10000);
+	Reset(true);
+	PowerOn();
+	px4_usleep(10000);
 
 	//
-	// Release the reset of USB hub
+	// Release the Reset of USB hub
 	//
-	reset(false);
-	usleep(100000);
+	Reset(false);
+	px4_usleep(100000);
 
 	//
 	// Get the USB serial number as string
 	//
-	udec_to_str(serial, 10, 0xCAFEBABE);
+	UIntToStr(serial, 10, 0xCAFEBABE);
 
 	//
 	// Update the HUB configuration
 	//
-	insert_mfr_str("stalya");
-	insert_prd_str("simpleTRAP");
-	insert_ser_str(serial);
+	InsertManufacturer("Stalya");
+	InsertProduct("TRAP");
+	InsertSerial(serial);
 
 	//
 	// Update the HUB configuration
@@ -202,7 +206,7 @@ bool USB251x::Configure()
 		}//if
 
 		// calculate the crc value of configuration part
-		crc1 = crc32(cfg, HUB_BLOCK_SIZE/4, crc1);
+		crc1 = Checksum(cfg, HUB_BLOCK_SIZE/4, crc1);
 	}//for
 
 	//
@@ -220,7 +224,7 @@ bool USB251x::Configure()
 		}//if
 
 		// calculate the crc value of configuration part
-		crc2 = crc32(block, HUB_BLOCK_SIZE/4, crc2);
+		crc2 = Checksum(block, HUB_BLOCK_SIZE/4, crc2);
 	}//for
 
 	//
@@ -231,12 +235,12 @@ bool USB251x::Configure()
 		//
 		// Configures the hub ports
 		//
-		config_chip(USBHUB_CFG_MASK);
+		ConfigureChip(USBHUB_CFG_MASK);
 
 		//
-		// attach the USB up-stream port
+		// Attach the USB up-stream port
 		//
-		_attached = attach();
+		_attached = Attach();
 		return _attached;
 	}//if
 
@@ -300,56 +304,68 @@ I2CSPIDriverBase *USB251x::instantiate(const BusCLIArguments &cli, const BusInst
 *******************************************************************************/
 void USB251x::custom_method(const BusCLIArguments &cli)
 {
+	switch (cli.custom1)
+	{
+		case 1: {
+			Configure();
+			break;
+		}
+
+		case 2: {
+			// TODO: disable it
+			break;
+		}
+	}//switch
 }//custom_method
 
 
 /*******************************************************************************
-* Function Name  : reset
+* Function Name  : Reset
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::reset(bool stat)
+void USB251x::Reset(bool stat)
 {
 	px4_arch_gpiowrite(GPIO_USBHUB_RESET, !stat);
-}//reset
+}//Reset
 
 
 /*******************************************************************************
-* Function Name  : poweron
+* Function Name  : PowerOn
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::poweron()
+void USB251x::PowerOn()
 {
 	px4_arch_gpiowrite(GPIO_VDD_3V3_USB_EN, true);
-}//poweron
+}//PowerOn
 
 
 /*******************************************************************************
-* Function Name  : poweroff
+* Function Name  : PowerOff
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::poweroff()
+void USB251x::PowerOff()
 {
 	px4_arch_gpiowrite(GPIO_VDD_3V3_USB_EN, false);
-}//poweroff
+}//PowerOff
 
 
 /*******************************************************************************
-* Function Name  : attach
+* Function Name  : Attach
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-bool USB251x::attach()
+bool USB251x::Attach()
 {
 	// prepare the SMBus data
 	uint8_t cmd = 0x01;
@@ -361,17 +377,17 @@ bool USB251x::attach()
 	}//if
 
 	return true;
-}//attach
+}//Attach
 
 
 /*******************************************************************************
-* Function Name  : config_port
+* Function Name  : ConfigurePort
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-bool USB251x::config_port(uint8_t port, bool stat)
+bool USB251x::ConfigurePort(uint8_t port, bool stat)
 {
 	uint8_t port_map[4];
 
@@ -449,58 +465,58 @@ bool USB251x::config_port(uint8_t port, bool stat)
 	}//if
 
     	return true;
-}//config_port
+}//ConfigurePort
 
 
 /*******************************************************************************
-* Function Name  : config_chip
+* Function Name  : ConfigureChip
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::config_chip(uint32_t port_mask)
+void USB251x::ConfigureChip(uint32_t port_mask)
 {
 	//
 	// Enable the mcu USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::MCU_PORT), true);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::MCU_PORT), true);
 
 	//
 	// Enable the F9P USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9P_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9P_PORT))) != 0);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9P_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9P_PORT))) != 0);
 
 	//
 	// Enable the F9H2 USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H2_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H2_PORT))) != 0);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H2_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H2_PORT))) != 0);
 
 	//
 	// Enable the F9H1 USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H1_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H1_PORT))) != 0);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H1_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H1_PORT))) != 0);
 
 	//
 	// Enable the XBEE USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::XBEE_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::XBEE_PORT))) != 0);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::XBEE_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::XBEE_PORT))) != 0);
 
 	//
 	// Enable the GSM USB port
 	//
-	config_port(static_cast<uint8_t>(USBHUB_PORT_TYPE::GSM_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::GSM_PORT))) != 0);
-}//config_chip
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::GSM_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::GSM_PORT))) != 0);
+}//ConfigureChip
 
 
 /*******************************************************************************
-* Function Name  : udec_to_str
+* Function Name  : UIntToStr
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::udec_to_str(char* buf, uint8_t digits, uint32_t val)
+void USB251x::UIntToStr(char* buf, uint8_t digits, uint32_t val)
 {
 	uint8_t i = digits - 1;
 	char d;
@@ -517,100 +533,94 @@ void USB251x::udec_to_str(char* buf, uint8_t digits, uint32_t val)
 	} while(i != 0);
 
 	*buf++ = val + '0';
-}//udec_to_str
+}//UIntToStr
 
 
 /*******************************************************************************
-* Function Name  : create_utf16_str
+* Function Name  : ConvertToUTF16
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-int USB251x::create_utf16_str(const char *inp_str, char *utf16_str)
+int USB251x::ConvertToUTF16(const char *inp_str)
 {
     // get the string length
-    int slen = strlen(inp_str);
+    int slen = math::min(strlen(inp_str), (size_t)31);
 
     // convert the string value to the UTF16_LE
     for (uint8_t i=0; i<slen; i++)
     {
-        utf16_str[2*i+0] = inp_str[i];
-        utf16_str[2*i+1] = 0;
+        _utf16_str[2*i+0] = inp_str[i];
+        _utf16_str[2*i+1] = 0;
     }//for
 
     return (2*slen);
-}//create_utf16_str
+}//ConvertToUTF16
 
 
 /*******************************************************************************
-* Function Name  : insert_mfr_str
+* Function Name  : InsertManufacturer
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::insert_mfr_str(const char *mfr_str)
+void USB251x::InsertManufacturer(const char *mfr_str)
 {
-    char utf16_str[62]={0};
-
     // create the utf16 data
-    int len = create_utf16_str(mfr_str, utf16_str);
+    int len = ConvertToUTF16(mfr_str);
 
     // update the bub config
     _hub_config[HUB_MFR_LEN_OFS] = len/2;
-    memcpy(&_hub_config[HUB_MFR_STR_OFS], utf16_str, len);
-}//insert_mfr_str
+    memcpy(&_hub_config[HUB_MFR_STR_OFS], _utf16_str, len);
+}//InsertManufacturer
 
 
 /*******************************************************************************
-* Function Name  : insert_prd_str
+* Function Name  : InsertProduct
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::insert_prd_str(const char *prd_str)
+void USB251x::InsertProduct(const char *prd_str)
 {
-    char utf16_str[62]={0};
-
     // create the utf16 data
-    int len = create_utf16_str(prd_str, utf16_str);
+    int len = ConvertToUTF16(prd_str);
 
     // update the bub config
     _hub_config[HUB_PRD_LEN_OFS] = len/2;
-    memcpy(&_hub_config[HUB_PRD_STR_OFS], utf16_str, len);
-}//insert_prd_str
+    memcpy(&_hub_config[HUB_PRD_STR_OFS], _utf16_str, len);
+}//InsertProduct
 
 
 /*******************************************************************************
-* Function Name  : insert_ser_str
+* Function Name  : InsertSerial
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-void USB251x::insert_ser_str(const char *ser_str)
+void USB251x::InsertSerial(const char *ser_str)
 {
-    char utf16_str[62]={0};
-
     // create the utf16 data
-    int len = create_utf16_str(ser_str, utf16_str);
+    int len = ConvertToUTF16(ser_str);
 
     // update the bub config
     _hub_config[HUB_SER_LEN_OFS] = len/2;
-    memcpy(&_hub_config[HUB_SER_STR_OFS], utf16_str, len);
-}//insert_ser_str
+    memcpy(&_hub_config[HUB_SER_STR_OFS], _utf16_str, len);
+}//InsertSerial
 
 
 /*******************************************************************************
-* Function Name  : crc32
+* Function Name  : Checksum
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-uint32_t USB251x::crc32(const void *buf_in, uint32_t buf_len, uint32_t init_crc)
+uint32_t USB251x::Checksum(const void *buf_in, uint32_t buf_len, uint32_t init_crc)
 {
 	uint32_t *buf = (uint32_t*)buf_in;
 	uint32_t crc = init_crc;
@@ -630,7 +640,7 @@ uint32_t USB251x::crc32(const void *buf_in, uint32_t buf_len, uint32_t init_crc)
 	}//for
 
 	return crc;
-}//crc32
+}//Checksum
 
 
 /*******************************************************************************
@@ -667,6 +677,19 @@ extern "C" __EXPORT int usb251x_main(int argc, char *argv[])
 		return ThisDriver::module_status(iterator);
 	}
 
+	if (!strcmp(verb, "enable")) {
+		cli.custom1 = 1;
+		return ThisDriver::module_custom_method(cli, iterator, false);
+	}
+
+	if (!strcmp(verb, "disable")) {
+		cli.custom1 = 2;
+		return ThisDriver::module_custom_method(cli, iterator, false);
+	}
+
 	ThisDriver::print_usage();
 	return -1;
 }
+
+#pragma GCC pop_options
+

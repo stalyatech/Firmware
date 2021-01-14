@@ -8,7 +8,7 @@ px4_add_board(
 	LABEL debug
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
-	ROMFSROOT trapfmu_test
+	ROMFSROOT trapfmu_debug
 	IO stalya_io-v2_default
 	SERIAL_PORTS
 		TEL1:/dev/ttyS0

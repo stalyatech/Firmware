@@ -80,8 +80,10 @@ public:
 	void custom_method(const BusCLIArguments &cli) override;
 
 private:
-	SMBus   *_interface;
+	SMBus   *_interface{nullptr};
 	bool 	 _attached{false};
+	char 	 _utf16_str[64]={0};
+
 	uint8_t  _hub_config[256]
 	{
 		0x24,       	// Vendor ID LSB
@@ -152,16 +154,16 @@ private:
 		0x00,		// Status/Command
 	};
 
-	void reset(bool stat);
-	void poweron();
-	void poweroff();
-	bool attach();
-	bool config_port(uint8_t port, bool stat);
-	void config_chip(uint32_t port_mask);
-	void udec_to_str(char* buf, uint8_t digits, uint32_t val);
-	int  create_utf16_str(const char *inp_str, char *utf16_str);
-	void insert_mfr_str(const char *mfr_str);
-	void insert_prd_str(const char *prd_str);
-	void insert_ser_str(const char *ser_str);
-	uint32_t crc32(const void *buf_in, uint32_t buf_len, uint32_t init_crc);
+	void Reset(bool stat);
+	void PowerOn();
+	void PowerOff();
+	bool Attach();
+	bool ConfigurePort(uint8_t port, bool stat);
+	void ConfigureChip(uint32_t port_mask);
+	void UIntToStr(char* buf, uint8_t digits, uint32_t val);
+	int  ConvertToUTF16(const char *inp_str);
+	void InsertManufacturer(const char *mfr_str);
+	void InsertProduct(const char *prd_str);
+	void InsertSerial(const char *ser_str);
+	uint32_t Checksum(const void *buf_in, uint32_t buf_len, uint32_t init_crc);
 };
