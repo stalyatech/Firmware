@@ -53,11 +53,11 @@ enum class USBHUB_PORT_TYPE
 {
     UPS_PORT,
     F9P_PORT,
-    F9H1_PORT,
+    TEL_PORT,
     MCU_PORT,
     GSM_PORT,
-    XBEE_PORT,
-    F9H2_PORT,
+    XBE_PORT,
+    F9H_PORT,
 };
 
 class USB251x : public I2CSPIDriver<USB251x>
@@ -154,6 +154,8 @@ private:
 		0x00,		// Status/Command
 	};
 
+	void exit_and_cleanup() override;
+
 	void Reset(bool stat);
 	void PowerOn();
 	void PowerOff();
@@ -161,7 +163,7 @@ private:
 	bool ConfigurePort(uint8_t port, bool stat);
 	void ConfigureChip(uint32_t port_mask);
 	void UIntToStr(char* buf, uint8_t digits, uint32_t val);
-	int  ConvertToUTF16(const char *inp_str);
+	int  CreateUTF16(const char *inp_str);
 	void InsertManufacturer(const char *mfr_str);
 	void InsertProduct(const char *prd_str);
 	void InsertSerial(const char *ser_str);

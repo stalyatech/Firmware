@@ -89,6 +89,19 @@ int PWMOut::init()
 	return 0;
 }
 
+int PWMOut::pwm_servo_set(unsigned channel, servo_position_t value) {
+
+	if (_pwm_inv_mask & (1 << channel)) {
+		int max_rate = (_pwm_default_rate > _pwm_alt_rate) ? _pwm_default_rate : _pwm_alt_rate;
+		if (max_rate != 0) {
+			unsigned max_cycle = 1000000UL / max_rate;
+			value = max_cycle - value;
+		}
+	}
+
+	return up_pwm_servo_set(channel, value);
+}
+
 int PWMOut::set_mode(Mode mode)
 {
 	unsigned old_mask = _pwm_mask;
@@ -457,6 +470,42 @@ void PWMOut::update_pwm_rev_mask()
 			reverse_pwm_mask |= ((int16_t)(ival != 0)) << i;
 		}
 	}
+
+	_pwm_rev_mask = reverse_pwm_mask;
+}
+
+void PWMOut::update_pwm_inv_mask()
+{
+	uint16_t invert_pwm_mask = 0;
+
+	const char *pname_format;
+
+	if (_class_instance == CLASS_DEVICE_PRIMARY) {
+		pname_format = "PWM_MAIN_INV%d";
+
+	} else if (_class_instance == CLASS_DEVICE_SECONDARY) {
+		pname_format = "PWM_AUX_INV%d";
+
+	} else {
+		PX4_ERR("PWM INV only for MAIN and AUX");
+		return;
+	}
+
+	for (unsigned i = 0; i < FMU_MAX_ACTUATORS; i++) {
+		char pname[16];
+
+		/* fill the channel reverse mask from parameters */
+		sprintf(pname, pname_format, i + 1);
+		param_t param_h = param_find(pname);
+
+		if (param_h != PARAM_INVALID) {
+			int32_t ival = 0;
+			param_get(param_h, &ival);
+			invert_pwm_mask |= ((int16_t)(ival != 0)) << i;
+		}
+	}
+
+	_pwm_inv_mask = invert_pwm_mask;
 }
 
 void PWMOut::update_pwm_trims()
@@ -559,7 +608,7 @@ bool PWMOut::updateOutputs(bool stop_motors, uint16_t outputs[MAX_ACTUATORS],
 	/* output to the servos */
 	if (_pwm_initialized) {
 		for (size_t i = 0; i < math::min(_num_outputs, num_outputs); i++) {
-			up_pwm_servo_set(i, outputs[i]);
+			pwm_servo_set(i, outputs[i]);
 		}
 	}
 
@@ -622,6 +671,7 @@ void PWMOut::Run()
 void PWMOut::update_params()
 {
 	update_pwm_rev_mask();
+	update_pwm_inv_mask();
 	update_pwm_trims();
 
 	updateParams();
@@ -1010,7 +1060,7 @@ int PWMOut::pwm_ioctl(file *filp, int cmd, unsigned long arg)
 	case PWM_SERVO_SET(1):
 	case PWM_SERVO_SET(0):
 		if (arg <= 2100) {
-			up_pwm_servo_set(cmd - PWM_SERVO_SET(0), arg);
+			pwm_servo_set(cmd - PWM_SERVO_SET(0), arg);
 
 		} else {
 			ret = -EINVAL;

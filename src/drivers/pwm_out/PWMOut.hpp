@@ -168,6 +168,8 @@ private:
 	uint32_t	_pwm_alt_rate_channels{0};
 
 	unsigned	_current_update_rate{0};
+	uint16_t 	_pwm_rev_mask{0};
+	uint16_t 	_pwm_inv_mask{0};
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
 
@@ -191,6 +193,7 @@ private:
 	int			set_pwm_rate(unsigned rate_map, unsigned default_rate, unsigned alt_rate);
 	int			pwm_ioctl(file *filp, int cmd, unsigned long arg);
 	void		update_pwm_rev_mask();
+	void		update_pwm_inv_mask();
 	void		update_pwm_out_state(bool on);
 
 	void		update_params();
@@ -199,6 +202,8 @@ private:
 	static void		peripheral_reset(int ms);
 
 	int		capture_ioctl(file *filp, int cmd, unsigned long arg);
+
+	int 		pwm_servo_set(unsigned channel, servo_position_t value);
 
 	PWMOut(const PWMOut &) = delete;
 	PWMOut operator=(const PWMOut &) = delete;

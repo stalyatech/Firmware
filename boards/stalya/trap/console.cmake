@@ -30,7 +30,7 @@ px4_add_board(
 		gps
 		#heater
 		#imu # all available imu drivers
-		imubmi088
+		imu/bmi088
 		irlock
 		lights/blinkm
 		lights/rgbled

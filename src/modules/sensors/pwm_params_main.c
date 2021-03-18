@@ -802,3 +802,85 @@ PARAM_DEFINE_FLOAT(PWM_MAIN_TRIM7, 0);
  * @group PWM Outputs
  */
 PARAM_DEFINE_FLOAT(PWM_MAIN_TRIM8, 0);
+
+/******************************************************************************
+*                                PWM_MAIN_INV                                 *
+******************************************************************************/
+
+/**
+ * Invert polarity of main output channel 1
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV1, 1);
+
+/**
+ * Invert polarity of main output channel 2
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV2, 1);
+
+/**
+ * Invert polarity of main output channel 3
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV3, 1);
+
+/**
+ * Invert polarity of main output channel 4
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV4, 1);
+
+/**
+ * Invert polarity of main output channel 5
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV5, 0);
+
+/**
+ * Invert polarity of main output channel 6
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV6, 0);
+
+/**
+ * Invert polarity of main output channel 7
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV7, 0);
+
+/**
+ * Invert polarity of main output channel 8
+ *
+ * Enable to invert the channel polarity.
+ *
+ * @boolean
+ * @group PWM Outputs
+ */
+PARAM_DEFINE_INT32(PWM_MAIN_INV8, 0);

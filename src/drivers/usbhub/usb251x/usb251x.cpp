@@ -45,9 +45,6 @@
 
 #include "usb251x.h"
 
-#pragma GCC push_options
-#pragma GCC optimize ("-O0")
-
 /*
 *********************************************************************************************************
 *                                            LOCAL DEFINITIONS
@@ -73,9 +70,8 @@
 
 // System USB devices
 #define USBHUB_CFG_MASK     ( (1<<static_cast<int>(USBHUB_PORT_TYPE::F9P_PORT))  |  \
-                              (1<<static_cast<int>(USBHUB_PORT_TYPE::F9H1_PORT)) |  \
-                              (1<<static_cast<int>(USBHUB_PORT_TYPE::F9H2_PORT)) |  \
-                              (1<<static_cast<int>(USBHUB_PORT_TYPE::XBEE_PORT)) |  \
+                              (1<<static_cast<int>(USBHUB_PORT_TYPE::F9H_PORT))  |  \
+                              (1<<static_cast<int>(USBHUB_PORT_TYPE::XBE_PORT)) |  \
                               (1<<static_cast<int>(USBHUB_PORT_TYPE::GSM_PORT)) )
 
 
@@ -137,6 +133,20 @@ USB251x::~USB251x()
 
 
 /*******************************************************************************
+* Function Name  : exit_and_cleanup
+* Description    : None
+* Input          : None
+* Output         : None
+* Return         : None
+*******************************************************************************/
+void USB251x::exit_and_cleanup()
+{
+	PowerOff();
+	I2CSPIDriverBase::exit_and_cleanup();
+}//exit_and_cleanup
+
+
+/*******************************************************************************
 * Function Name  : RunImpl
 * Description    : None
 * Input          : None
@@ -171,7 +181,7 @@ bool USB251x::Configure()
 	px4_usleep(10000);
 
 	//
-	// Release the Reset of USB hub
+	// Release the reset of USB hub
 	//
 	Reset(false);
 	px4_usleep(100000);
@@ -261,8 +271,6 @@ void USB251x::print_usage()
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
 	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(HUB_SMB_ADDR);
-	PRINT_MODULE_USAGE_COMMAND_DESCR("enable", "Enable the driver to connect all on-board USB ports.");
-	PRINT_MODULE_USAGE_COMMAND_DESCR("disable", "Disable the driver to disconnect from all on-board USB ports.");
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }//print_usage
 
@@ -304,18 +312,6 @@ I2CSPIDriverBase *USB251x::instantiate(const BusCLIArguments &cli, const BusInst
 *******************************************************************************/
 void USB251x::custom_method(const BusCLIArguments &cli)
 {
-	switch (cli.custom1)
-	{
-		case 1: {
-			Configure();
-			break;
-		}
-
-		case 2: {
-			// TODO: disable it
-			break;
-		}
-	}//switch
 }//custom_method
 
 
@@ -478,9 +474,14 @@ bool USB251x::ConfigurePort(uint8_t port, bool stat)
 void USB251x::ConfigureChip(uint32_t port_mask)
 {
 	//
-	// Enable the mcu USB port
+	// Enable the MCU USB port
 	//
 	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::MCU_PORT), true);
+
+	//
+	// Enable the F9H USB port
+	//
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H_PORT))) != 0);
 
 	//
 	// Enable the F9P USB port
@@ -488,24 +489,19 @@ void USB251x::ConfigureChip(uint32_t port_mask)
 	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9P_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9P_PORT))) != 0);
 
 	//
-	// Enable the F9H2 USB port
-	//
-	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H2_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H2_PORT))) != 0);
-
-	//
-	// Enable the F9H1 USB port
-	//
-	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::F9H1_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::F9H1_PORT))) != 0);
-
-	//
 	// Enable the XBEE USB port
 	//
-	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::XBEE_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::XBEE_PORT))) != 0);
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::XBE_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::XBE_PORT))) != 0);
 
 	//
 	// Enable the GSM USB port
 	//
 	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::GSM_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::GSM_PORT))) != 0);
+
+	//
+	// Enable the TEL USB port
+	//
+	ConfigurePort(static_cast<uint8_t>(USBHUB_PORT_TYPE::TEL_PORT), (port_mask & (1 << static_cast<int>(USBHUB_PORT_TYPE::TEL_PORT))) != 0);
 }//ConfigureChip
 
 
@@ -537,18 +533,19 @@ void USB251x::UIntToStr(char* buf, uint8_t digits, uint32_t val)
 
 
 /*******************************************************************************
-* Function Name  : ConvertToUTF16
+* Function Name  : CreateUTF16
 * Description    : None
 * Input          : None
 * Output         : None
 * Return         : None
 *******************************************************************************/
-int USB251x::ConvertToUTF16(const char *inp_str)
+int USB251x::CreateUTF16(const char *inp_str)
 {
     // get the string length
     int slen = math::min(strlen(inp_str), (size_t)31);
 
     // convert the string value to the UTF16_LE
+    memset(_utf16_str, 0, sizeof(_utf16_str));
     for (uint8_t i=0; i<slen; i++)
     {
         _utf16_str[2*i+0] = inp_str[i];
@@ -556,7 +553,7 @@ int USB251x::ConvertToUTF16(const char *inp_str)
     }//for
 
     return (2*slen);
-}//ConvertToUTF16
+}//CreateUTF16
 
 
 /*******************************************************************************
@@ -569,7 +566,7 @@ int USB251x::ConvertToUTF16(const char *inp_str)
 void USB251x::InsertManufacturer(const char *mfr_str)
 {
     // create the utf16 data
-    int len = ConvertToUTF16(mfr_str);
+    int len = CreateUTF16(mfr_str);
 
     // update the bub config
     _hub_config[HUB_MFR_LEN_OFS] = len/2;
@@ -587,7 +584,7 @@ void USB251x::InsertManufacturer(const char *mfr_str)
 void USB251x::InsertProduct(const char *prd_str)
 {
     // create the utf16 data
-    int len = ConvertToUTF16(prd_str);
+    int len = CreateUTF16(prd_str);
 
     // update the bub config
     _hub_config[HUB_PRD_LEN_OFS] = len/2;
@@ -605,7 +602,7 @@ void USB251x::InsertProduct(const char *prd_str)
 void USB251x::InsertSerial(const char *ser_str)
 {
     // create the utf16 data
-    int len = ConvertToUTF16(ser_str);
+    int len = CreateUTF16(ser_str);
 
     // update the bub config
     _hub_config[HUB_SER_LEN_OFS] = len/2;
@@ -677,19 +674,6 @@ extern "C" __EXPORT int usb251x_main(int argc, char *argv[])
 		return ThisDriver::module_status(iterator);
 	}
 
-	if (!strcmp(verb, "enable")) {
-		cli.custom1 = 1;
-		return ThisDriver::module_custom_method(cli, iterator, false);
-	}
-
-	if (!strcmp(verb, "disable")) {
-		cli.custom1 = 2;
-		return ThisDriver::module_custom_method(cli, iterator, false);
-	}
-
 	ThisDriver::print_usage();
 	return -1;
 }
-
-#pragma GCC pop_options
-
