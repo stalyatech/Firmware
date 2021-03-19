@@ -114,7 +114,7 @@ USB251x::USB251x(I2CSPIBusOption bus_option, const int bus, SMBus *interface) :
 	px4_arch_configgpio(GPIO_USBHUB_RESET);
 
 	// initialize low level interface
-	_interface->init();
+	_initialized = (_interface->init() == OK);
 }
 
 /*******************************************************************************
@@ -155,6 +155,11 @@ void USB251x::exit_and_cleanup()
 *******************************************************************************/
 void USB251x::RunImpl()
 {
+	if (_initialized) {
+		Configure();
+	}
+
+	ScheduleClear();
 }//RunImpl
 
 
@@ -297,7 +302,7 @@ I2CSPIDriverBase *USB251x::instantiate(const BusCLIArguments &cli, const BusInst
 		return nullptr;
 	}
 
-	instance->Configure();
+	instance->ScheduleNow();
 
 	return instance;
 }//instantiate

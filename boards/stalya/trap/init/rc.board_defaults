@@ -6,7 +6,7 @@
 #
 # Bootloader upgrade
 #
-set BL_FILE /etc/extras/stalya_trap_bootloader.bin
+set BL_FILE /etc/extras/stalya_trap_boot.bin
 if [ -f $BL_FILE ]
 then
 	if param compare SYS_BL_UPDATE 1
@@ -36,4 +36,4 @@ then
 fi
 
 set LOGGER_BUF 64
-set IOFW "/etc/extras/stalya_io-v2_default.bin"
+set IOFW "/etc/extras/stalya_trap_io.bin"

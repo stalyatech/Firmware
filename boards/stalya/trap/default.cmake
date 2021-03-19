@@ -10,15 +10,14 @@ px4_add_board(
 	BUILD_BOOTLOADER
 	IO stalya_io-v2_default
 	UAVCAN_INTERFACES 2
-	UAVCAN_TIMER_OVERRIDE 2
 	SERIAL_PORTS
 		TEL1:/dev/ttyS0
-		GPS2:/dev/ttyS1
+		GPS1:/dev/ttyS1
 		#CON:/dev/ttyS2
 		TEL2:/dev/ttyS3
 		#PX4IO:/dev/ttyS4
 		TEL3:/dev/ttyS5
-		GPS1:/dev/ttyS6
+		GPS2:/dev/ttyS6
 	DRIVERS
 		adc
 		#barometer
@@ -78,7 +77,7 @@ px4_add_board(
 		rover_pos_control
 		sensors
 		sih
-		#temperature_compensation
+		temperature_compensation
 		vmount
 		vtol_att_control
 	SYSTEMCMDS
@@ -92,7 +91,7 @@ px4_add_board(
 		led_control
 		mixer
 		motor_ramp
-		#motor_test
+		motor_test
 		mtd
 		nshterm
 		param

@@ -82,6 +82,7 @@ public:
 private:
 	SMBus   *_interface{nullptr};
 	bool 	 _attached{false};
+	bool 	 _initialized{false};
 	char 	 _utf16_str[64]={0};
 
 	uint8_t  _hub_config[256]

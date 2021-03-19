@@ -29,8 +29,8 @@ set FCONFIG /fs/microsd/etc/config.txt
 set FEXTRAS /fs/microsd/etc/extras.txt
 set FMU_MODE pwm
 set FRC /fs/microsd/etc/rc.txt
-set IOFW "/etc/extras/stalya_io-v2_default.bin"
-set IO_PRESENT no
+set IOFW "/etc/extras/stalya_trap_io.bin"
+set IO_PRESENT yes
 set LOG_FILE /fs/microsd/bootlog.txt
 set LOGGER_ARGS ""
 set LOGGER_BUF  14

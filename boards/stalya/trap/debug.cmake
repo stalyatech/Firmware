@@ -12,12 +12,12 @@ px4_add_board(
 	IO stalya_io-v2_default
 	SERIAL_PORTS
 		TEL1:/dev/ttyS0
-		GPS2:/dev/ttyS1
+		GPS1:/dev/ttyS1
 		#CON:/dev/ttyS2
 		TEL2:/dev/ttyS3
 		#PX4IO:/dev/ttyS4
 		TEL3:/dev/ttyS5
-		GPS1:/dev/ttyS6
+		GPS2:/dev/ttyS6
 	DRIVERS
 		adc
 		gps
