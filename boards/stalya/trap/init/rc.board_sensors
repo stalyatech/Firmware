@@ -5,10 +5,10 @@
 adc start
 
 # internal USB Hub
-usb251x -I -a 44 start
+#usb251x -I -a 44 start
 
 # Wait 200 ms for USB hub initialize
-usleep 200000
+#usleep 200000
 
 # internal IMU sensor
 bmi088 -I start

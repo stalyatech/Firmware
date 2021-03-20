@@ -24,4 +24,8 @@ sh /etc/init.d/rc.mc_defaults
 
 set MIXER quad_x
 
+# Need to set 4 channels for pwm main
 set PWM_OUT 1234
+
+# Need to set 8 channels for pwm aux
+set PWM_AUX_OUT 12345678
