@@ -31,75 +31,46 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/getopt.h>
-#include <px4_platform_common/module.h>
+/**
+ * @file bootloader_main.c
+ *
+ * FMU-specific early startup code for bootloader
+*/
 
-#include "BMI088.hpp"
+#include "board_config.h"
+#include "bl.h"
 
-void BMI088::print_usage()
+#include <nuttx/config.h>
+#include <nuttx/board.h>
+#include <chip.h>
+#include <stm32_uart.h>
+#include <arch/board/board.h>
+#include "arm_internal.h"
+#include <px4_platform_common/init.h>
+
+extern int sercon_main(int c, char **argv);
+
+__EXPORT void board_on_reset(int status) {}
+
+__EXPORT void stm32_boardinitialize(void)
 {
-	PRINT_MODULE_USAGE_NAME("bmi088_i2c", "driver");
-	PRINT_MODULE_USAGE_SUBCATEGORY("imu");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAM_FLAG('A', "Accel", true);
-	PRINT_MODULE_USAGE_PARAM_FLAG('G', "Gyro", true);
-	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(0x76);
-	PRINT_MODULE_USAGE_PARAM_INT('R', 0, 0, 35, "Rotation", true);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
+	/* configure USB interfaces */
+	stm32_configgpio(GPIO_OTGFS_VBUS);
 }
 
-extern "C" int bmi088_i2c_main(int argc, char *argv[])
+__EXPORT int board_app_initialize(uintptr_t arg)
 {
-	int ch;
-	using ThisDriver = BMI088;
-	BusCLIArguments cli{true, true};
-	cli.i2c_address = 0x18;
-	cli.default_i2c_frequency = 400 * 1000;
-	cli.default_spi_frequency = 400 * 1000;
+	return 0;
+}
 
+void board_late_initialize(void)
+{
+	px4_platform_console_init();
+	sercon_main(0, NULL);
+}
 
-	while ((ch = cli.getopt(argc, argv, "AGR:")) != EOF) {
-		switch (ch) {
-		case 'A':
-			cli.type = DRV_ACC_DEVTYPE_BMI088;
-			cli.i2c_address = 0x18;
-			break;
-
-		case 'G':
-			cli.type = DRV_GYR_DEVTYPE_BMI088;
-			cli.i2c_address = 0x68;
-			break;
-
-		case 'R':
-			cli.rotation = (enum Rotation)atoi(cli.optarg());
-			break;
-		}
-	}
-
-	const char *verb = cli.optarg();
-
-	if (!verb) {
-		ThisDriver::print_usage();
-		return -1;
-	}
-
-	BusInstanceIterator iterator(MODULE_NAME, cli, cli.type);
-
-	if (!strcmp(verb, "start")) {
-		return ThisDriver::module_start(cli, iterator);
-	}
-
-	if (!strcmp(verb, "stop")) {
-		return ThisDriver::module_stop(iterator);
-	}
-
-	if (!strcmp(verb, "status")) {
-		return ThisDriver::module_status(iterator);
-	}
-
-	PX4_WARN("print_usage1");
-	ThisDriver::print_usage();
-	return -1;
+extern void sys_tick_handler(void);
+void board_timerhook(void)
+{
+	sys_tick_handler();
 }

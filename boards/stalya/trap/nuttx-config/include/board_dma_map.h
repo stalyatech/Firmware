@@ -31,75 +31,11 @@
  *
  ****************************************************************************/
 
-#include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/getopt.h>
-#include <px4_platform_common/module.h>
+#pragma once
 
-#include "BMI088.hpp"
+// DMAMUX1
+#define DMAMAP_SPI3_RX    DMAMAP_DMA12_SPI3RX_0 /* DMA1:61 */
+#define DMAMAP_SPI3_TX    DMAMAP_DMA12_SPI3TX_0 /* DMA1:62 */
 
-void BMI088::print_usage()
-{
-	PRINT_MODULE_USAGE_NAME("bmi088_i2c", "driver");
-	PRINT_MODULE_USAGE_SUBCATEGORY("imu");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAM_FLAG('A', "Accel", true);
-	PRINT_MODULE_USAGE_PARAM_FLAG('G', "Gyro", true);
-	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(0x76);
-	PRINT_MODULE_USAGE_PARAM_INT('R', 0, 0, 35, "Rotation", true);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
-}
-
-extern "C" int bmi088_i2c_main(int argc, char *argv[])
-{
-	int ch;
-	using ThisDriver = BMI088;
-	BusCLIArguments cli{true, true};
-	cli.i2c_address = 0x18;
-	cli.default_i2c_frequency = 400 * 1000;
-	cli.default_spi_frequency = 400 * 1000;
-
-
-	while ((ch = cli.getopt(argc, argv, "AGR:")) != EOF) {
-		switch (ch) {
-		case 'A':
-			cli.type = DRV_ACC_DEVTYPE_BMI088;
-			cli.i2c_address = 0x18;
-			break;
-
-		case 'G':
-			cli.type = DRV_GYR_DEVTYPE_BMI088;
-			cli.i2c_address = 0x68;
-			break;
-
-		case 'R':
-			cli.rotation = (enum Rotation)atoi(cli.optarg());
-			break;
-		}
-	}
-
-	const char *verb = cli.optarg();
-
-	if (!verb) {
-		ThisDriver::print_usage();
-		return -1;
-	}
-
-	BusInstanceIterator iterator(MODULE_NAME, cli, cli.type);
-
-	if (!strcmp(verb, "start")) {
-		return ThisDriver::module_start(cli, iterator);
-	}
-
-	if (!strcmp(verb, "stop")) {
-		return ThisDriver::module_stop(iterator);
-	}
-
-	if (!strcmp(verb, "status")) {
-		return ThisDriver::module_status(iterator);
-	}
-
-	PX4_WARN("print_usage1");
-	ThisDriver::print_usage();
-	return -1;
-}
+#define DMAMAP_USART6_RX   DMAMAP_DMA12_USART6RX_1 /* DMA1:71 */
+#define DMAMAP_USART6_TX   DMAMAP_DMA12_USART6TX_1 /* DMA1:72 */

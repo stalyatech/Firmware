@@ -156,3 +156,13 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: nxp_fmuk66-v3_default
+    stalya_trap_default:
+      short: stalya_trap
+      buildType: MinSizeRel
+      settings:
+        CONFIG: stalya_trap_default
+    stalya_trap_debug:
+      short: stalya_trap_debug
+      buildType: Debug
+      settings:
+        CONFIG: stalya_trap_debug

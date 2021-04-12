@@ -31,75 +31,81 @@
  *
  ****************************************************************************/
 
+/**
+ * @file led.c
+ *
+ * LED backend.
+ */
+
 #include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/getopt.h>
-#include <px4_platform_common/module.h>
 
-#include "BMI088.hpp"
+#include <stdbool.h>
 
-void BMI088::print_usage()
+#include "chip.h"
+#include "stm32_gpio.h"
+#include "board_config.h"
+
+#include <nuttx/board.h>
+#include <arch/board/board.h>
+
+/*
+ * Ideally we'd be able to get these from arm_internal.h,
+ * but since we want to be able to disable the NuttX use
+ * of leds for system indication at will and there is no
+ * separate switch, we need to build independent of the
+ * CONFIG_ARCH_LEDS configuration switch.
+ */
+__BEGIN_DECLS
+extern void led_init(void);
+extern void led_on(int led);
+extern void led_off(int led);
+extern void led_toggle(int led);
+__END_DECLS
+
+#  define xlat(p) (p)
+static uint32_t g_ledmap[] = {
+	GPIO_LED_RED,
+};
+
+__EXPORT void led_init(void)
 {
-	PRINT_MODULE_USAGE_NAME("bmi088_i2c", "driver");
-	PRINT_MODULE_USAGE_SUBCATEGORY("imu");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAM_FLAG('A', "Accel", true);
-	PRINT_MODULE_USAGE_PARAM_FLAG('G', "Gyro", true);
-	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(0x76);
-	PRINT_MODULE_USAGE_PARAM_INT('R', 0, 0, 35, "Rotation", true);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
-}
-
-extern "C" int bmi088_i2c_main(int argc, char *argv[])
-{
-	int ch;
-	using ThisDriver = BMI088;
-	BusCLIArguments cli{true, true};
-	cli.i2c_address = 0x18;
-	cli.default_i2c_frequency = 400 * 1000;
-	cli.default_spi_frequency = 400 * 1000;
-
-
-	while ((ch = cli.getopt(argc, argv, "AGR:")) != EOF) {
-		switch (ch) {
-		case 'A':
-			cli.type = DRV_ACC_DEVTYPE_BMI088;
-			cli.i2c_address = 0x18;
-			break;
-
-		case 'G':
-			cli.type = DRV_GYR_DEVTYPE_BMI088;
-			cli.i2c_address = 0x68;
-			break;
-
-		case 'R':
-			cli.rotation = (enum Rotation)atoi(cli.optarg());
-			break;
+	/* Configure LED GPIOs for output */
+	for (size_t l = 0; l < (sizeof(g_ledmap) / sizeof(g_ledmap[0])); l++) {
+		if (g_ledmap[l] != 0) {
+			stm32_configgpio(g_ledmap[l]);
 		}
 	}
+}
 
-	const char *verb = cli.optarg();
+static void phy_set_led(int led, bool state)
+{
+	/* Drive Low to switch on */
+	if (g_ledmap[led] != 0) {
+		stm32_gpiowrite(g_ledmap[led], !state);
+	}
+}
 
-	if (!verb) {
-		ThisDriver::print_usage();
-		return -1;
+static bool phy_get_led(int led)
+{
+	/* If Low it is on */
+	if (g_ledmap[led] != 0) {
+		return !stm32_gpioread(g_ledmap[led]);
 	}
 
-	BusInstanceIterator iterator(MODULE_NAME, cli, cli.type);
+	return false;
+}
 
-	if (!strcmp(verb, "start")) {
-		return ThisDriver::module_start(cli, iterator);
-	}
+__EXPORT void led_on(int led)
+{
+	phy_set_led(xlat(led), true);
+}
 
-	if (!strcmp(verb, "stop")) {
-		return ThisDriver::module_stop(iterator);
-	}
+__EXPORT void led_off(int led)
+{
+	phy_set_led(xlat(led), false);
+}
 
-	if (!strcmp(verb, "status")) {
-		return ThisDriver::module_status(iterator);
-	}
-
-	PX4_WARN("print_usage1");
-	ThisDriver::print_usage();
-	return -1;
+__EXPORT void led_toggle(int led)
+{
+	phy_set_led(xlat(led), !phy_get_led(xlat(led)));
 }
