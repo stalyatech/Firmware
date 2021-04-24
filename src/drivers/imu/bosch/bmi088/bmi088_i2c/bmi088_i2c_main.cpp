@@ -69,7 +69,7 @@ extern "C" int bmi088_i2c_main(int argc, char *argv[])
 
 		case 'G':
 			cli.type = DRV_GYR_DEVTYPE_BMI088;
-			cli.i2c_address = 0x69;
+			cli.i2c_address = 0x68;
 			break;
 
 		case 'R':
