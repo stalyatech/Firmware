@@ -29,7 +29,7 @@ px4_add_board(
 		dshot
 		gps
 		#heater
-		imu/bosch/bmi088/bmi088_i2c
+		imu/bmi088
 		irlock
 		lights # all available light drivers
 		#magnetometer
