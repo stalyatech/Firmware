@@ -99,6 +99,7 @@ private:
 	enum class STATE : uint8_t {
 		INIT,
 		READ,
+		FIFO_READ,
 	};
 
 	STATE _state{STATE::INIT};

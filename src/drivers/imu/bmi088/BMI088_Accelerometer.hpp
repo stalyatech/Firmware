@@ -52,12 +52,17 @@ public:
 	int  Reset();
 	int  Check();
 	int  ReadData(int16_t *accel);
+	int  ReadFIFO(const hrt_abstime &timestamp_sample, sensor_accel_fifo_s &accel);
 	int  ReadTemperature(float *temp);
 	bool Configure();
 	int  ConfigureSyncMode();
 
 	inline void Update(const hrt_abstime &timestamp_sample, float x, float y, float z) {
 		_px4_accel.update(timestamp_sample, x, y, z);
+	}
+
+	inline void UpdateFIFO(sensor_accel_fifo_s &accel) {
+		_px4_accel.updateFIFO(accel);
 	}
 
 	inline void SetErrorCount(uint32_t error_count) {
@@ -71,6 +76,10 @@ public:
 private:
 	Device 	        *_interface{nullptr};
 	PX4Accelerometer _px4_accel;
+
+	// Sensor Configuration
+	static constexpr uint32_t RATE{1600};
+	static constexpr float FIFO_SAMPLE_DT{1e6f / RATE};
 
 	struct register_config_t {
 		Register reg;

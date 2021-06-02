@@ -160,7 +160,126 @@ int BMI088_Accelerometer::ReadData(int16_t *accel)
 	}
 
 	return PX4_ERROR;
-}//ReadSynchronizedData
+}//ReadData
+
+
+/*******************************************************************************
+* Function Name  : ReadFIFO
+* Description    : None
+* Input          : None
+* Output         : None
+* Return         : None
+*******************************************************************************/
+int BMI088_Accelerometer::ReadFIFO(const hrt_abstime &timestamp_sample, sensor_accel_fifo_s &accel)
+{
+	uint16_t fifo_fill_level;
+
+	/* prepare the acceleration data */
+	accel.timestamp_sample = timestamp_sample;
+	accel.samples = 0;
+	accel.dt = FIFO_SAMPLE_DT;
+
+	 /* Read FIFO length */
+	if (StreamRead(Register::FIFO_LENGTH_0, &fifo_fill_level, 2) == 2) {
+
+		/* Length check */
+		if (fifo_fill_level & 0x8000) {
+			return PX4_ERROR;
+		}
+
+		int n_frames_to_read = 6;
+
+		/* don't read more than 6 frames at a time */
+		if (fifo_fill_level > n_frames_to_read * 7) {
+			fifo_fill_level = n_frames_to_read * 7;
+		}
+
+		if (fifo_fill_level == 0) {
+			return PX4_ERROR;
+		}
+
+		uint8_t data[fifo_fill_level];
+
+		/* Read FIFO data */
+		if (StreamRead(Register::FIFO_DATA, data, fifo_fill_level) == fifo_fill_level) {
+
+			const uint8_t *p = &data[0];
+
+			while (fifo_fill_level >= 7)
+			{
+				uint8_t frame_len = 2;
+
+				switch (p[0] & 0xFC)
+				{
+					/* acceleration sensor data frame */
+					case 0x84:
+					{
+						frame_len = 7;
+						const uint8_t *d = p + 1;
+						int16_t xyz[3] {
+							int16_t(uint16_t(d[0] | (d[1] << 8))),
+							int16_t(uint16_t(d[2] | (d[3] << 8))),
+							int16_t(uint16_t(d[4] | (d[5] << 8)))
+						};
+
+						const int16_t tX[3] = {1, 0, 0};
+						const int16_t tY[3] = {0, -1, 0};
+						const int16_t tZ[3] = {0, 0, -1};
+
+						float x = 0;
+						float y = 0;
+						float z = 0;
+
+						x = xyz[0] * tX[0] + xyz[1] * tX[1] + xyz[2] * tX[2];
+						y = xyz[0] * tY[0] + xyz[1] * tY[1] + xyz[2] * tY[2];
+						z = xyz[0] * tZ[0] + xyz[1] * tZ[1] + xyz[2] * tZ[2];
+
+						accel.x[accel.samples] = x;
+						accel.y[accel.samples] = y;
+						accel.z[accel.samples] = z;
+						accel.samples++;
+						break;
+					}
+
+					/* skip frame */
+					case 0x40:
+					{
+						frame_len = 2;
+						break;
+					}
+
+					/* sensortime frame */
+					case 0x44:
+					{
+						frame_len = 4;
+						break;
+					}
+
+					/* fifo config frame */
+					case 0x48:
+					{
+						frame_len = 2;
+						break;
+					}
+
+					/* sample drop frame */
+					case 0x50:
+					{
+						frame_len = 2;
+						break;
+					}
+				}//switch
+
+				p += frame_len;
+				fifo_fill_level -= frame_len;
+			}//while
+
+			return PX4_OK;
+		}//if
+	}//if
+
+	return PX4_ERROR;
+}//ReadFIFO
 
 
 /*******************************************************************************

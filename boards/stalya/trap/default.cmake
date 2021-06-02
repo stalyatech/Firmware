@@ -20,7 +20,7 @@ px4_add_board(
 		GPS2:/dev/ttyS6
 	DRIVERS
 		adc/board_adc
-		#barometer
+		barometer/ms5611
 		#batt_smbus
 		#camera_capture
 		#camera_trigger
@@ -32,7 +32,7 @@ px4_add_board(
 		imu/bmi088
 		irlock
 		lights # all available light drivers
-		#magnetometer
+		magnetometer/lis3mdl
 		#optical_flow
 		osd
 		#pca9685

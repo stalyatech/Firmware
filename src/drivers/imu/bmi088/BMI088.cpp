@@ -354,6 +354,109 @@ void BMI088::RunImpl()
 		break;
 	}//READ
 
+	case STATE::FIFO_READ:
+	{
+		sensor_accel_fifo_s accel{};
+		sensor_gyro_fifo_s gyro{};
+
+		/* start measuring */
+		perf_begin(_sample_perf);
+
+		/* get the time stamp */
+		const hrt_abstime now = hrt_absolute_time();
+
+		/* Read the accelerometer FIFO */
+		if (_accel->ReadFIFO(now, accel) != PX4_OK) {
+			perf_count(_bad_transfer_perf);
+			perf_end(_sample_perf);
+			return;
+		}
+
+		/* Read the gyroscope FIFO */
+		if (_gyro->ReadFIFO(now, gyro) != PX4_OK) {
+			perf_count(_bad_transfer_perf);
+			perf_end(_sample_perf);
+			return;
+		}
+
+		/* check configuration registers periodically */
+		if (hrt_elapsed_time(&_last_config_check_timestamp) > 100_ms) {
+
+			/* update the time stamp */
+			_last_config_check_timestamp = now;
+
+			if ((_accel->Check() != PX4_OK) || (_gyro->Check() != PX4_OK)) {
+				perf_count(_bad_register_perf);
+				perf_end(_sample_perf);
+
+				/* register check failed, force reset */
+				Reset();
+				return;
+			}
+		}
+
+		/* periodically update temperature (~1 Hz) */
+		if (hrt_elapsed_time(&_temperature_update_timestamp) >= 1_s) {
+
+			float temperature;
+
+			/* update the time stamp */
+			_temperature_update_timestamp = now;
+
+			/* Read the temperature */
+			if (_accel->ReadTemperature(&temperature) != PX4_OK) {
+				perf_count(_bad_transfer_perf);
+				perf_end(_sample_perf);
+				return;
+			}
+
+			/* report the temperature */
+			_accel->SetTemperature(temperature);
+			_gyro->SetTemperature(temperature);
+		}
+
+		/* increment the good transfer count */
+		perf_count(_good_transfer_perf);
+
+		// report the error count as the sum of the number of bad
+		// transfers and bad register reads. This allows the higher
+		// level code to decide if it should use this sensor based on
+		// whether it has had failures
+		const uint64_t error_count = perf_event_count(_bad_transfer_perf) + perf_event_count(_bad_register_perf);
+		_accel->SetErrorCount(error_count);
+		_gyro->SetErrorCount(error_count);
+
+		/*
+		* 1) Scale raw value to SI units using scaling from datasheet.
+		* 2) Subtract static offset (in SI units)
+		* 3) Scale the statically calibrated values with a linear
+		*    dynamically obtained factor
+		*
+		* Note: the static sensor offset is the number the sensor outputs
+		* 	 at a nominally 'zero' input. Therefore the offset has to
+		* 	 be subtracted.
+		*
+		*	 Example: A gyro outputs a value of 74 at zero angular rate
+		*	 	  the offset is 74 from the origin and subtracting
+		*		  74 from all measurements centers them around zero.
+		*/
+
+
+		/* NOTE: Axes have been swapped to match the board a few lines above. */
+
+		if (accel.samples > 0) {
+			_accel->UpdateFIFO(accel);
+		}
+
+		if (gyro.samples > 0) {
+			_gyro->UpdateFIFO(gyro);
+		}
+
+		/* stop measuring */
+		perf_end(_sample_perf);
+		break;
+	}//FIFO_READ
+
 	}//switch
 }//RunImpl
 

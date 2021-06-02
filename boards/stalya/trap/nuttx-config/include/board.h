@@ -259,5 +259,8 @@
 
 
 /* I2C */
+#define GPIO_I2C1_SCL GPIO_I2C1_SCL_2       /* PB8  */
+#define GPIO_I2C1_SDA GPIO_I2C1_SDA_2       /* PB9  */
+
 #define GPIO_I2C3_SCL GPIO_I2C3_SCL_1       /* PA8  */
 #define GPIO_I2C3_SDA GPIO_I2C3_SDA_1       /* PC9  */

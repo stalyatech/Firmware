@@ -52,10 +52,15 @@ public:
 	int  Reset();
 	int  Check();
 	int  ReadData(int16_t *gyro);
+	int  ReadFIFO(const hrt_abstime &timestamp_sample, sensor_gyro_fifo_s &gyro);
 	bool Configure();
 
 	inline void Update(const hrt_abstime &timestamp_sample, float x, float y, float z) {
 		_px4_gyro.update(timestamp_sample, x, y, z);
+	}
+
+	inline void UpdateFIFO(sensor_gyro_fifo_s &gyro) {
+		_px4_gyro.updateFIFO(gyro);
 	}
 
 	inline void SetErrorCount(uint32_t error_count) {
@@ -69,6 +74,10 @@ public:
 private:
 	Device 	       *_interface{nullptr};
 	PX4Gyroscope 	_px4_gyro;
+
+	// Sensor Configuration
+	static constexpr uint32_t RATE{400};
+	static constexpr float FIFO_SAMPLE_DT{1e6f / RATE};
 
 	struct register_config_t {
 		Register reg;

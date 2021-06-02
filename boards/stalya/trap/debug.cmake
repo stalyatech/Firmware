@@ -12,7 +12,6 @@ px4_add_board(
 	CONSTRAINED_FLASH
 	IO stalya_io-v2_default
 	#UAVCAN_INTERFACES 2
-	#UAVCAN_TIMER_OVERRIDE 2
 	SERIAL_PORTS
 		TEL1:/dev/ttyS0
 		GPS1:/dev/ttyS1
@@ -23,48 +22,51 @@ px4_add_board(
 		GPS2:/dev/ttyS6
 	DRIVERS
 		adc/board_adc
-		#barometer
+		barometer/ms5611
 		#batt_smbus
 		#camera_capture
 		#camera_trigger
 		#differential_pressure
-		#distance_sensor
+		distance_sensor
 		dshot
 		gps
 		#heater
 		imu/bmi088
-		#irlock
-		lights/blinkm
-		lights/rgbled
-		#lights/rgbled_pwm
-		#magnetometer
-		mkblctrl
+		irlock
+		lights # all available light drivers
+		magnetometer/lis3mdl
 		#optical_flow
+		osd
+		#pca9685
+		#pca9685_pwm_out
+		#power_monitor/ina226
+		#protocol_splitter
+		#pwm_input
 		pwm_out_sim
 		pwm_out
-		#rc_input
 		px4io
 		roboclaw
-		#safety_button
 		rpm
-		#tap_esc
-		telemetry
+		telemetry # all available telemetry drivers
+		#test_ppm
 		tone_alarm
 		#uavcan
 		usbhub/usb251x
 	MODULES
-		airspeed_selector
+		#airspeed_selector
 		attitude_estimator_q
 		battery_status
 		#camera_feedback
 		commander
 		dataman
-		ekf2
+		#ekf2
 		#esc_battery
 		events
 		flight_mode_manager
 		fw_att_control
 		fw_pos_control_l1
+		gyro_calibration
+		gyro_fft
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -75,26 +77,30 @@ px4_add_board(
 		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
+		#micrortps_bridge
 		navigator
 		rc_update
 		rover_pos_control
 		sensors
 		sih
-		#temperature_compensation
+		temperature_compensation
+		#uuv_att_control
+		#uuv_pos_control
 		vmount
-		#vtol_att_control
+		vtol_att_control
 	SYSTEMCMDS
 		bl_update
-		dmesg
-		dumpfile
-		esc_calib
+		#dmesg
+		#dumpfile
+		#esc_calib
 		gpio
-		hardfault_log
-		#i2cdetect
-		led_control
+		#hardfault_log
+		i2cdetect
+		#led_control
 		mft
 		mixer
-		motor_ramp
+		#motor_ramp
+		#motor_test
 		mtd
 		nshterm
 		param
@@ -102,10 +108,11 @@ px4_add_board(
 		pwm
 		reboot
 		reflect
-		system_time
-		top
+		#system_time
+		#top
 		topic_listener
-		tune_control
+		#tune_control
+		uorb
 		usb_connected
 		ver
 		work_queue

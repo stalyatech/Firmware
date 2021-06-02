@@ -159,6 +159,61 @@ int BMI088_Gyroscope::ReadData(int16_t *gyro)
 
 
 /*******************************************************************************
+* Function Name  : ReadFIFO
+* Description    : None
+* Input          : None
+* Output         : None
+* Return         : None
+*******************************************************************************/
+int BMI088_Gyroscope::ReadFIFO(const hrt_abstime &timestamp_sample, sensor_gyro_fifo_s &gyro)
+{
+	/* prepare the gyroscope data */
+	gyro.timestamp_sample = timestamp_sample;
+	gyro.samples = 0;
+	gyro.dt = FIFO_SAMPLE_DT;
+
+	 /* Read FIFO Status */
+	uint8_t n_frames = RegisterRead(Register::FIFO_STATUS) & 0x7F;
+
+	int n_frames_to_read = 6;
+
+	/* don't read more than 6 frames at a time */
+	if (n_frames > n_frames_to_read) {
+		n_frames = n_frames_to_read;
+	}
+
+	if (n_frames == 0) {
+		return PX4_ERROR;
+	}
+
+	int frame_size = 6 * n_frames;
+	uint8_t data[frame_size];
+
+	/* Read FIFO data */
+	if (StreamRead(Register::FIFO_DATA, data, frame_size) == frame_size) {
+
+		for (uint8_t i = 0; i < n_frames; i++) {
+			const uint8_t *d = &data[i * 6];
+			int16_t xyz[3] {
+				int16_t(uint16_t(d[0] | d[1] << 8)),
+				int16_t(uint16_t(d[2] | d[3] << 8)),
+				int16_t(uint16_t(d[4] | d[5] << 8))
+			};
+
+			gyro.x[i] = xyz[0];
+			gyro.y[i] = (xyz[1] == INT16_MIN) ? INT16_MAX : -xyz[1];
+			gyro.z[i] = (xyz[2] == INT16_MIN) ? INT16_MAX : -xyz[2];
+			gyro.samples++;
+		}
+
+		return PX4_OK;
+	}
+
+	return PX4_ERROR;
+}//ReadFIFO
+
+
+/*******************************************************************************
 * Function Name  : Configure
 * Description    : None
 * Input          : None

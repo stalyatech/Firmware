@@ -53,7 +53,7 @@
 #include "board_config.h"
 #include "lis3mdl.h"
 
-#define LIS3MDLL_ADDRESS        0x1e
+#define LIS3MDLL_ADDRESS        0x1c
 
 class LIS3MDL_I2C : public device::I2C
 {
