@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Board specific sensors init
+#------------------------------------------------------------------------------
+board_adc start
+
+# internal USB Hub
+usb251x -I -b 3 -a 44 start
+
+# internal IMU sensor
+bmi088 -I -b 3 start
+
+# internal magnetometer
+lis3mdl -I -b 1 start
+
+# internal barometer
+ms5611 -I -b 1 start

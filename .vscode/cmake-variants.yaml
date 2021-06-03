@@ -96,11 +96,11 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: cuav_x7pro_default
-    cubepilot_cubeorange_test:
+    cubepilot_cubeorange_console:
       short: cubepilot_cubeorange
       buildType: MinSizeRel
       settings:
-        CONFIG: cubepilot_orange_test
+        CONFIG: cubepilot_orange_console
     emlid_navio2_default:
       short: emlid_navio2
       buildType: MinSizeRel
@@ -151,3 +151,13 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: nxp_fmuk66-v3_default
+    stalya_trap_default:
+      short: stalya_trap
+      buildType: MinSizeRel
+      settings:
+        CONFIG: stalya_trap_default
+    stalya_trap_debug:
+      short: stalya_trap_debug
+      buildType: Debug
+      settings:
+        CONFIG: stalya_trap_debug
