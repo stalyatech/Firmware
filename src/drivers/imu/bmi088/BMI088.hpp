@@ -73,10 +73,6 @@ private:
 	Bosch::BMI088::Accelerometer::BMI088_Accelerometer *_accel{nullptr};
 	Bosch::BMI088::Gyroscope::BMI088_Gyroscope *_gyro{nullptr};
 
-	// Sensor Configuration
-	static constexpr uint32_t RATE{400};
-	static constexpr float SAMPLE_DT{1e6f / RATE};
-
 	struct sensor_data_t {
 		int16_t x;
 		int16_t y;

@@ -1,4 +1,4 @@
-set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type" FORCE)
+set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Build type" FORCE)
 add_compile_options(-Wno-error=frame-larger-than=)
 
 px4_add_board(
@@ -9,7 +9,7 @@ px4_add_board(
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT trapfmu
-	CONSTRAINED_FLASH
+	BUILD_BOOTLOADER
 	IO stalya_io-v2_default
 	#UAVCAN_INTERFACES 2
 	SERIAL_PORTS
@@ -53,18 +53,18 @@ px4_add_board(
 		#uavcan
 		usbhub/usb251x
 	MODULES
-		#airspeed_selector
+		airspeed_selector
 		attitude_estimator_q
 		battery_status
 		#camera_feedback
 		commander
 		dataman
-		#ekf2
-		#esc_battery
+		ekf2
+		esc_battery
 		events
 		flight_mode_manager
-		fw_att_control
-		fw_pos_control_l1
+		#fw_att_control
+		#fw_pos_control_l1
 		gyro_calibration
 		gyro_fft
 		land_detector
@@ -83,24 +83,24 @@ px4_add_board(
 		rover_pos_control
 		sensors
 		sih
-		temperature_compensation
+		#temperature_compensation
 		#uuv_att_control
 		#uuv_pos_control
 		vmount
-		vtol_att_control
+		#vtol_att_control
 	SYSTEMCMDS
 		bl_update
-		#dmesg
-		#dumpfile
-		#esc_calib
+		dmesg
+		dumpfile
+		esc_calib
 		gpio
-		#hardfault_log
+		hardfault_log
 		i2cdetect
-		#led_control
+		led_control
 		mft
 		mixer
-		#motor_ramp
-		#motor_test
+		motor_ramp
+		motor_test
 		mtd
 		nshterm
 		param
@@ -108,10 +108,10 @@ px4_add_board(
 		pwm
 		reboot
 		reflect
-		#system_time
-		#top
+		system_time
+		top
 		topic_listener
-		#tune_control
+		tune_control
 		uorb
 		usb_connected
 		ver

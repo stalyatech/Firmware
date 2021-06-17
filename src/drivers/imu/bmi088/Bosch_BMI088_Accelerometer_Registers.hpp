@@ -140,6 +140,8 @@ enum FIFO_CONFIG_0_BIT : uint8_t {
 enum FIFO_CONFIG_1_BIT : uint8_t {
 	Acc_en      = Bit6,
 	BIT4_ALWAYS = Bit4, // This bit must always be ‘1’.
+    int1_en     = Bit3,
+    int2_en     = Bit2,
 };
 
 // INT1_IO_CONF

@@ -76,7 +76,7 @@ private:
 	PX4Gyroscope 	_px4_gyro;
 
 	// Sensor Configuration
-	static constexpr uint32_t RATE{400};
+	static constexpr uint32_t RATE{2000};
 	static constexpr float FIFO_SAMPLE_DT{1e6f / RATE};
 
 	struct register_config_t {
@@ -86,11 +86,11 @@ private:
 	};
 
 	uint8_t _checked_register{0};
-	static constexpr uint8_t size_register_cfg{8};
+	static constexpr uint8_t size_register_cfg{5};
 	register_config_t _register_cfg[size_register_cfg] {
 		// Register                         | Set bits, Clear bits
 		{ Register::GYRO_RANGE,             GYRO_RANGE_BIT::gyro_range_2000_dps, 0 },
-		{ Register::GYRO_BANDWIDTH,         GYRO_BANDWIDTH_BIT::gyro_bw_47_odr_400_Hz, 0 },
+		{ Register::GYRO_BANDWIDTH,         GYRO_BANDWIDTH_BIT::gyro_bw_230_odr_2000_Hz, 0 },
 		{ Register::GYRO_INT_CTRL,          GYRO_INT_CTRL_BIT::data_en, 0 },
 		{ Register::INT3_INT4_IO_CONF,      INT3_INT4_IO_CONF_BIT::Int3_lvl, INT3_INT4_IO_CONF_BIT::Int3_od },
 		{ Register::INT3_INT4_IO_MAP,       INT3_INT4_IO_MAP_BIT::Int3_data, 0 },

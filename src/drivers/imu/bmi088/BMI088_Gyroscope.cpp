@@ -139,17 +139,17 @@ int BMI088_Gyroscope::ReadData(int16_t *gyro)
 		lsb = data[0];
 		msb = data[1];
 		msblsb = (msb << 8) | lsb;
-		gyro[0] = ((int16_t) msblsb); /* Data in X axis */
+		gyro[0] = ((int16_t) msblsb);  /* Data in X axis */
 
 		lsb = data[2];
 		msb = data[3];
 		msblsb = (msb << 8) | lsb;
-		gyro[1] = ((int16_t) msblsb); /* Data in Y axis */
+		gyro[1] = -((int16_t) msblsb); /* Data in Y axis */
 
 		lsb = data[4];
 		msb = data[5];
 		msblsb = (msb << 8) | lsb;
-		gyro[2] = ((int16_t) msblsb); /* Data in Z axis */
+		gyro[2] = -((int16_t) msblsb); /* Data in Z axis */
 
 		return PX4_OK;
 	}

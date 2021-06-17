@@ -72,6 +72,7 @@ enum class Register : uint8_t {
 
 	FIFO_WM_ENABLE    = 0x1E,
 
+	FIFO_EXT_INT_S    = 0x34,
 	FIFO_CONFIG_0     = 0x3D,
 	FIFO_CONFIG_1     = 0x3E,
 	FIFO_DATA         = 0x3F,
@@ -135,6 +136,11 @@ enum FIFO_CONFIG_1_BIT : uint8_t {
 	FIFO_MODE = Bit6,
 };
 
+// FIFO_EXT_INT_S
+enum FIFO_EXT_INT_S : uint8_t {
+	FIFO_SYNC = Bit5,
+	FIFO_INT4 = Bit4,
+};
 
 namespace FIFO
 {
