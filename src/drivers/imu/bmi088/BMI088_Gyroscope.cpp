@@ -131,25 +131,28 @@ int BMI088_Gyroscope::ReadData(int16_t *gyro)
 {
 	uint8_t data[6];
 	uint8_t lsb, msb;
-	uint16_t msblsb;
+	int16_t msblsb;
 
 	/* Read gyro sensor data */
 	if (StreamRead(Register::RATE_X_LSB, &data[0], 6) == 6) {
 
+		/* sensor's frame is +x forward, +y left, +z up
+		   publish right handed with x forward, y right, z down */
+
 		lsb = data[0];
 		msb = data[1];
 		msblsb = (msb << 8) | lsb;
-		gyro[0] = ((int16_t) msblsb);  /* Data in X axis */
+		gyro[0] = msblsb;  					/* Data in X axis */
 
 		lsb = data[2];
 		msb = data[3];
 		msblsb = (msb << 8) | lsb;
-		gyro[1] = -((int16_t) msblsb); /* Data in Y axis */
+		gyro[1] = (msblsb == INT16_MIN) ? INT16_MAX : -msblsb; 	/* Data in Y axis */
 
 		lsb = data[4];
 		msb = data[5];
 		msblsb = (msb << 8) | lsb;
-		gyro[2] = -((int16_t) msblsb); /* Data in Z axis */
+		gyro[2] = (msblsb == INT16_MIN) ? INT16_MAX : -msblsb; 	/* Data in Z axis */
 
 		return PX4_OK;
 	}

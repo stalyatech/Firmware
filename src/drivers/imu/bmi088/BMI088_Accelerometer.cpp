@@ -133,27 +133,31 @@ int BMI088_Accelerometer::ReadData(int16_t *accel)
 {
 	uint8_t data[6];
 	uint8_t lsb, msb;
-	uint16_t msblsb;
+	int16_t msblsb;
 
 	 /* Read accel x,y sensor data */
 	if (StreamRead(Register::ACC_GP_0, &data[0], 4) == 4) {
 
 		/* Read accel sensor data */
 		if (StreamRead(Register::ACC_GP_4, &data[4], 2) == 2) {
+
+			/* sensor's frame is +x forward, +y left, +z up
+			   publish right handed with x forward, y right, z down */
+
 			lsb = data[0];
 			msb = data[1];
 			msblsb = (msb << 8) | lsb;
-			accel[0] = ((int16_t) msblsb);  /* Data in X axis */
+			accel[0] = msblsb;  					/* Data in X axis */
 
 			lsb = data[2];
 			msb = data[3];
 			msblsb = (msb << 8) | lsb;
-			accel[1] = -((int16_t) msblsb); /* Data in Y axis */
+			accel[1] = (msblsb == INT16_MIN) ? INT16_MAX : -msblsb;	/* Data in Y axis */
 
 			lsb = data[4];
 			msb = data[5];
 			msblsb = (msb << 8) | lsb;
-			accel[2] = -((int16_t) msblsb); /* Data in Z axis */
+			accel[2] = (msblsb == INT16_MIN) ? INT16_MAX : -msblsb;	/* Data in Z axis */
 
 			return PX4_OK;
 		}

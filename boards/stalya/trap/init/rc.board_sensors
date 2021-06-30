@@ -11,7 +11,7 @@ usb251x -I -b 3 -a 44 start
 bmi088 -I -b 3 start
 
 # internal magnetometer
-lis3mdl -I -b 1 start
+lis3mdl -I -b 1 -R 4 start
 
 # internal barometer
 ms5611 -I -b 1 start
