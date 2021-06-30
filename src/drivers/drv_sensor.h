@@ -195,6 +195,7 @@
 
 #define DRV_GPS_DEVTYPE_SIM 0xAF
 
+#define DRV_USB_DEVTYPE_HUB 	0xf0
 
 #define DRV_DEVTYPE_UNUSED		0xff
 

@@ -77,9 +77,9 @@
 	/* PC0 */  PIN_ADC3_INP10
 
 /* Define Channel numbers must match above GPIO pins */
-#define ADC_BATTERY_VOLTAGE_CHANNEL         1 	/* PC3: BATT_VOLTAGE_SENS */
+#define ADC_BATTERY_VOLTAGE_CHANNEL         10 	/* PC0: BATT_VOLTAGE_SENS */
 #define ADC_BATTERY_CURRENT_CHANNEL         0 	/* PC2: BATT_CURRENT_SENS */
-#define ADC_AIRSPEED_VOLTAGE_CHANNEL        10 	/* PC0: PRESSURE_SENS */
+#define ADC_AIRSPEED_VOLTAGE_CHANNEL        1 	/* PC3: PRESSURE_SENS */
 
 #define ADC_CHANNELS \
 	((1 << ADC_BATTERY_VOLTAGE_CHANNEL)  | \

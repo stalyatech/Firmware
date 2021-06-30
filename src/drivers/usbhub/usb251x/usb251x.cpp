@@ -284,7 +284,7 @@ void USB251x::print_usage()
 I2CSPIDriverBase *USB251x::instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
 				      int runtime_instance)
 {
-	SMBus *interface = new SMBus(iterator.bus(), cli.i2c_address);
+	SMBus *interface = new SMBus(DRV_USB_DEVTYPE_HUB, iterator.bus(), cli.i2c_address);
 	if (interface == nullptr) {
 		PX4_ERR("alloc failed");
 		return nullptr;
