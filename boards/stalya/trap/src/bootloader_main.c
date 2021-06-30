@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,94 +32,45 @@
  ****************************************************************************/
 
 /**
- * @file lis3mdl_i2c.cpp
+ * @file bootloader_main.c
  *
- * I2C interface for LIS3MDL
- */
-
-#include <px4_platform_common/px4_config.h>
-
-#include <assert.h>
-#include <debug.h>
-#include <errno.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
-
-#include <drivers/device/i2c.h>
+ * FMU-specific early startup code for bootloader
+*/
 
 #include "board_config.h"
-#include "lis3mdl.h"
+#include "bl.h"
 
-#define LIS3MDLL_ADDRESS        0x1c
+#include <nuttx/config.h>
+#include <nuttx/board.h>
+#include <chip.h>
+#include <stm32_uart.h>
+#include <arch/board/board.h>
+#include "arm_internal.h"
+#include <px4_platform_common/init.h>
 
-class LIS3MDL_I2C : public device::I2C
+extern int sercon_main(int c, char **argv);
+
+__EXPORT void board_on_reset(int status) {}
+
+__EXPORT void stm32_boardinitialize(void)
 {
-public:
-	LIS3MDL_I2C(int bus, int bus_frequency);
-	virtual ~LIS3MDL_I2C() = default;
-
-	virtual int     read(unsigned address, void *data, unsigned count);
-	virtual int     write(unsigned address, void *data, unsigned count);
-
-protected:
-	virtual int     probe();
-
-};
-
-device::Device *
-LIS3MDL_I2C_interface(int bus, int bus_frequency);
-
-device::Device *
-LIS3MDL_I2C_interface(int bus, int bus_frequency)
-{
-	return new LIS3MDL_I2C(bus, bus_frequency);
+	/* configure USB interfaces */
+	stm32_configgpio(GPIO_OTGFS_VBUS);
 }
 
-LIS3MDL_I2C::LIS3MDL_I2C(int bus, int bus_frequency) :
-	I2C(DRV_MAG_DEVTYPE_LIS3MDL, MODULE_NAME, bus, LIS3MDLL_ADDRESS, bus_frequency)
+__EXPORT int board_app_initialize(uintptr_t arg)
 {
+	return 0;
 }
 
-int LIS3MDL_I2C::probe()
+void board_late_initialize(void)
 {
-	uint8_t data = 0;
-
-	_retries = 10;
-
-	if (read(ADDR_WHO_AM_I, &data, 1)) {
-		DEVICE_DEBUG("read_reg fail");
-		return -EIO;
-	}
-
-	_retries = 2;
-
-	if (data != ID_WHO_AM_I) {
-		DEVICE_DEBUG("LIS3MDL bad ID: %02x", data);
-		return -EIO;
-	}
-
-	return OK;
+	px4_platform_console_init();
+	sercon_main(0, NULL);
 }
 
-int LIS3MDL_I2C::read(unsigned address, void *data, unsigned count)
+extern void sys_tick_handler(void);
+void board_timerhook(void)
 {
-	uint8_t cmd = address;
-	return transfer(&cmd, 1, (uint8_t *)data, count);
-}
-
-int LIS3MDL_I2C::write(unsigned address, void *data, unsigned count)
-{
-	uint8_t buf[32];
-
-	if (sizeof(buf) < (count + 1)) {
-		return -EIO;
-	}
-
-	buf[0] = address;
-	memcpy(&buf[1], data, count);
-
-	return transfer(&buf[0], count + 1, nullptr, 0);
+	sys_tick_handler();
 }

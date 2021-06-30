@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,94 +32,80 @@
  ****************************************************************************/
 
 /**
- * @file lis3mdl_i2c.cpp
+ * @file led.c
  *
- * I2C interface for LIS3MDL
+ * LED backend.
  */
 
 #include <px4_platform_common/px4_config.h>
 
-#include <assert.h>
-#include <debug.h>
-#include <errno.h>
-#include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
-#include <sys/types.h>
-#include <unistd.h>
 
-#include <drivers/device/i2c.h>
-
+#include "chip.h"
+#include "stm32_gpio.h"
 #include "board_config.h"
-#include "lis3mdl.h"
 
-#define LIS3MDLL_ADDRESS        0x1c
+#include <nuttx/board.h>
+#include <arch/board/board.h>
 
-class LIS3MDL_I2C : public device::I2C
-{
-public:
-	LIS3MDL_I2C(int bus, int bus_frequency);
-	virtual ~LIS3MDL_I2C() = default;
+/*
+ * Ideally we'd be able to get these from arm_internal.h,
+ * but since we want to be able to disable the NuttX use
+ * of leds for system indication at will and there is no
+ * separate switch, we need to build independent of the
+ * CONFIG_ARCH_LEDS configuration switch.
+ */
+__BEGIN_DECLS
+extern void led_init(void);
+extern void led_on(int led);
+extern void led_off(int led);
+extern void led_toggle(int led);
+__END_DECLS
 
-	virtual int     read(unsigned address, void *data, unsigned count);
-	virtual int     write(unsigned address, void *data, unsigned count);
-
-protected:
-	virtual int     probe();
-
+#  define xlat(p) (p)
+static uint32_t g_ledmap[] = {
+	GPIO_LED_RED,
 };
 
-device::Device *
-LIS3MDL_I2C_interface(int bus, int bus_frequency);
-
-device::Device *
-LIS3MDL_I2C_interface(int bus, int bus_frequency)
+__EXPORT void led_init(void)
 {
-	return new LIS3MDL_I2C(bus, bus_frequency);
+	/* Configure LED GPIOs for output */
+	for (size_t l = 0; l < (sizeof(g_ledmap) / sizeof(g_ledmap[0])); l++) {
+		if (g_ledmap[l] != 0) {
+			stm32_configgpio(g_ledmap[l]);
+		}
+	}
 }
 
-LIS3MDL_I2C::LIS3MDL_I2C(int bus, int bus_frequency) :
-	I2C(DRV_MAG_DEVTYPE_LIS3MDL, MODULE_NAME, bus, LIS3MDLL_ADDRESS, bus_frequency)
+static void phy_set_led(int led, bool state)
 {
+	/* Drive Low to switch on */
+	if (g_ledmap[led] != 0) {
+		stm32_gpiowrite(g_ledmap[led], !state);
+	}
 }
 
-int LIS3MDL_I2C::probe()
+static bool phy_get_led(int led)
 {
-	uint8_t data = 0;
-
-	_retries = 10;
-
-	if (read(ADDR_WHO_AM_I, &data, 1)) {
-		DEVICE_DEBUG("read_reg fail");
-		return -EIO;
+	/* If Low it is on */
+	if (g_ledmap[led] != 0) {
+		return !stm32_gpioread(g_ledmap[led]);
 	}
 
-	_retries = 2;
-
-	if (data != ID_WHO_AM_I) {
-		DEVICE_DEBUG("LIS3MDL bad ID: %02x", data);
-		return -EIO;
-	}
-
-	return OK;
+	return false;
 }
 
-int LIS3MDL_I2C::read(unsigned address, void *data, unsigned count)
+__EXPORT void led_on(int led)
 {
-	uint8_t cmd = address;
-	return transfer(&cmd, 1, (uint8_t *)data, count);
+	phy_set_led(xlat(led), true);
 }
 
-int LIS3MDL_I2C::write(unsigned address, void *data, unsigned count)
+__EXPORT void led_off(int led)
 {
-	uint8_t buf[32];
+	phy_set_led(xlat(led), false);
+}
 
-	if (sizeof(buf) < (count + 1)) {
-		return -EIO;
-	}
-
-	buf[0] = address;
-	memcpy(&buf[1], data, count);
-
-	return transfer(&buf[0], count + 1, nullptr, 0);
+__EXPORT void led_toggle(int led)
+{
+	phy_set_led(xlat(led), !phy_get_led(xlat(led)));
 }
