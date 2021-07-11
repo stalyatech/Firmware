@@ -70,4 +70,5 @@ private:
 	int32_t _latitude{296603018};   // Latitude in 1e-7 degrees
 	int32_t _longitude{-823160500}; // Longitude in 1e-7 degrees
 	int32_t _altitude{30100};       // Altitude in 1e-3 meters above MSL, (millimetres)
+	int32_t _noise{0};
 };

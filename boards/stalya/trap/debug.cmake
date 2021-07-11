@@ -53,7 +53,7 @@ px4_add_board(
 		#uavcan
 		usbhub/usb251x
 	MODULES
-		airspeed_selector
+		#airspeed_selector
 		attitude_estimator_q
 		battery_status
 		#camera_feedback
@@ -119,4 +119,7 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
+		fake_gps
+		fake_imu
+		fake_magnetometer
 	)
