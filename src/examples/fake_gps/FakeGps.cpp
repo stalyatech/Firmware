@@ -78,7 +78,7 @@ void FakeGps::Run()
 	sensor_gps.vel_d_m_s = -0.0570f;
 	sensor_gps.cog_rad = 0.3988f;
 	sensor_gps.timestamp_time_relative = 0;
-	sensor_gps.heading = NAN;
+	sensor_gps.heading = (90 + (_noise++ & 3)) * (M_PI_F / 180.0f);
 	sensor_gps.heading_offset = 0.0000;
 	sensor_gps.fix_type = 4;
 	sensor_gps.jamming_state = 0;

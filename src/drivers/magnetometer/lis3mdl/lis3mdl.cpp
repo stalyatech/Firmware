@@ -127,7 +127,7 @@ int LIS3MDL::collect()
 	float temperature = 25.0f + (report.t / 8.0f);
 	_px4_mag.set_temperature(temperature);
 
-	_px4_mag.update(timestamp_sample, report.x, report.y, report.z);
+	_px4_mag.update(timestamp_sample, -report.x, report.y, -report.z);
 
 	return PX4_OK;
 }
