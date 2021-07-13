@@ -25,8 +25,4 @@ param set-default GPS_UBX_DYNMODEL 6
 #
 set MIXER_AUX pass
 
-param set-default PWM_AUX_MAX 1950
-param set-default PWM_AUX_MIN 1075
-param set-default PWM_AUX_RATE 400
-
 set PWM_AUX_OUT 1234

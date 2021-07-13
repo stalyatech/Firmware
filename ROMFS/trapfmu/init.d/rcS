@@ -27,7 +27,7 @@ set FCONFIG /fs/microsd/etc/config.txt
 set FEXTRAS /fs/microsd/etc/extras.txt
 set FMU_MODE pwm
 set FRC /fs/microsd/etc/rc.txt
-set IOFW "/etc/extras/px4io-core-v2.bin"
+set IOFW "/etc/extras/px4io_core.bin"
 set IO_PRESENT yes
 set LOGGER_ARGS ""
 set LOGGER_BUF 8

@@ -1,13 +1,8 @@
 #!/bin/sh
 #
-# Flight startup script for trapFMU standalone configuration.
+# Flight startup script for TRAPFMU standalone configuration.
 #
 
-echo "[i] doing standalone trapFMU startup..."
-
-#
-# Start the ORB
-#
-uorb start
+echo "[i] doing standalone TRAPFMU startup..."
 
 echo "[i] startup done"

@@ -36,7 +36,7 @@ px4_add_board(
 		lights # all available light drivers
 		magnetometer/lis3mdl
 		#optical_flow
-		osd
+		#osd
 		#pca9685
 		#pca9685_pwm_out
 		#power_monitor/ina226
@@ -47,7 +47,7 @@ px4_add_board(
 		px4io
 		roboclaw
 		rpm
-		smart_battery/batmon
+		#smart_battery/batmon
 		telemetry # all available telemetry drivers
 		tone_alarm
 		#uavcan
